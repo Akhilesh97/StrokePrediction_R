@@ -1,0 +1,680 @@
+---
+title: "Stroke Prediction in R"
+authors: "Sreevani Basvaraj Patil"
+date: '2022-12-03'
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# ------------------------------------------------------------------------
+
+## CONTENTS
+
+1.  **Introduction**
+
+    1.1. Preface
+
+    1.2. The Project
+
+    1.3. What is Stroke Diagnosis ?
+
+    1.4. Causes of Stroke Diagnosis
+
+    1.5. Impact Analysis of this study
+
+2.  **Analysis**
+
+    2.1. Packages
+
+    2.2. Data Collection
+
+    2.3. Data Preparation
+
+    2.4. EDA
+
+    2.5. Logistic Regression
+
+3.  **Results**
+
+4.  **Conclusion**
+
+5.  **Personal Biases**
+
+# ------------------------------------------------------------------------
+
+# 1. Introduction
+
+------------------------------------------------------------------------
+
+## **1.1. Preface**
+
+The second biggest cause of death worldwide is stroke. The World Health Organization estimates that 5 million people get a stroke each year in the world. One third of them pass away, while the other third are permanently crippled. Every 40 seconds, someone in the US experiences a stroke, and every four minutes, someone passes away. As a result of the disruption of blood supply to the brain, sufferers might experience a wide range of incapacitating symptoms, such as abrupt paralysis, loss of speech, or blindness. In the US, the annual financial burden on the healthcare system is estimated to be \$34 billion. Care for elderly stroke survivors costs an additional \$40 per year.
+
+Stroke carries a high risk of death. Survivors can experience loss of vision and/or speech, paralysis and confusion. Stroke is so called because of the way it strikes people down. The risk of further episodes are significantly increased for people having experienced a previous stroke. The risk of death depends on the type of stroke. Transient ischaemic attacks or TIA -- where symptoms resolve in less than 24 hours, have the best outcome, followed by stroke caused by carotid stenosis (narrowing of the artery in the neck that supplies blood to the brain). Blockage of an artery is more dangerous, with rupture of a cerebral blood vessel the most dangerous of all.
+
+## **1.2. The Project**
+
+A localized lesion to the central nervous system brought on by decreased blood supply to the brain is what is known as a stroke, an acute neurological malfunction. Stroke is becoming a major global threat that can result in early death and severe economic effects. Therefore, it is essential to proactively predict how various risk factors affecting the likelihood of having a stroke, and machine learning models and AI seems to be the right instrument for the process. Machine learning methods for the analysis of neuro-imaging data are used to help diagnose a **stroke**.
+
+*A stroke can be life-threatening, if you or someone has had a stroke or has the warning signs, it is extremely important to seek medical attention immediately.*
+
+## **1.3. So, what is Stroke Diagnosis ?**
+
+Stroke is one of the topics which will be taught as part of neurological disorders and covers the following information:
+
+a.  Types of stroke
+b.  Risks and Symptoms
+c.  Diagnosing Conditions
+d.  Advanced treatments
+e.  Detection and Prevention
+
+## **1.3. How are strokes Diagnosed ?**
+
+A stroke can be life-threatening, if you or someone has had a stroke or has the warning signs, it is extremely important to seek medical attention immediately. An expert will diagnose a stroke based on signs and symptoms, medical history, and physical examination.
+
+a.  Physical exam
+b.  Blood testing
+c.  Computerized tomography (CT) scan
+d.  Magnetic resonance imaging (MRI)
+e.  Medical history
+
+## **1.4. Predicting Stroke Outcome with Data Analytics and Machine Learning**
+
+In recent years, ML models have been successfully used to evaluate stroke risk variables and outcomes. They include building a deep neural network (DNN) model, using logistic regression and random forest to predict poststroke motor outcomes, as well as assessing a mixed-effect linear model to predict the likelihood of cognitive deterioration poststroke.
+
+Machine learning methods for the analysis of neuroimaging data are used to help diagnose stroke. Since neuroimaging data covers a wide range of aspects relating to anatomy, function, and pathology, it is both highly extensive and complex. The application of machine learning techniques to the processing of complicated brain imaging data has garnered increasing attention in neuroimaging research. The existence of large-scale research that is supplemented with a broad and deep phenotyping is crucial to the success of machine learning methodologies. An unbalanced dataset containing data on thousands of people with known stroke outcomes was used in the research to develop a model that can predict stroke results with high accuracy and validity. A number of algorithms, including decision trees, naive bayes, and random forests, were evaluated; the random forest classifier was shown to be the most accurate at predicting the result of strokes (92%).
+
+## **1.5. Why this study is required and how it can help ?**
+
+The main-usecase for this study is to examine various contributing factors that lead to a potential life-threatning stroke attack.
+
+# ------------------------------------------------------------------------
+
+# Libraries
+
+Before proceeding to our project, kindly download the listed packages as below:
+
+```{r, echo=FALSE}
+
+# Packages
+#install.packages('httr')
+#install.packages('tidyverse')
+#install.packages('tidymodels')
+#install.packages('skimr')
+#install.packages('stringr')
+#install.packages('themis')
+#install.packages('vip')
+#install.packages('probably')
+#install.packages('glmnet')
+```
+
+Once you have installed the packages, you're good to go:
+
+```{r, message=FALSE, warning=FALSE}
+
+# Kindly import these pacakges to run our project:
+
+library(httr)                # for downloading data
+library(tidyverse)           # generic functions and deplyr
+library(tidymodels)          # models
+library(skimr)               # descriptive stats
+library(stringr)             # works with strings
+library(themis)              # for SMOTE and other recipes for target balancing
+library(vip)                 # for variable importance
+library(probably)            # for performance calibration
+library(glmnet)
+```
+
+```{r}
+# Let's set directory paths here...
+
+# Parent dir where our source code is located on your system
+dir_root <- getwd()
+
+# Ideally this would be an empty dir location at first
+dir_data <- paste0(dir_root, "/data")
+dir.create(dir_data)
+
+# Output location
+dir_output <- paste0(dir_root, "/output")
+dir.create(dir_output)
+
+# sanity display
+cat("* Your working dir is ---> \n", dir_root)
+cat("\n\n* Data is located in ---> \n", dir_data)
+cat("\n\n* All the outputs will be generated in ---> \n", dir_output)
+```
+
+# ------------------------------------------------------------------------
+
+# Data Collection
+
+The source of the dataset in scope is Kaggle. The URL for the dataset is <https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset>
+
+To download this dataset, user can use the mirror link hosted on **GitHub.com** (this step does not require installation of additional packages, but this could reflect an older snapshot version of the data since the source dataset was hosted on Kaggle and was being updated on a frequent basis).
+
+This directly downloads and loads data from a mirror link which may not reflect the latest snapshot of the source dataset uploaded on Kaggle.
+
+```{r}
+# Utility Helper
+download_from_git <- function(url, download_path) {
+  # Download file from url
+  download.file(url, download_path, mode="wb")
+  # Read csv
+  # upon quick look at the data set
+  # if you set smoking_status to factor in col_types, na() won't work
+  # remove ID, Sex == Other
+  # output to a factor
+  df <- 
+    readr::read_csv(download_path, col_types = "cfdfffffddcf", na = c("Unknown", "N/A")) %>% 
+    mutate(smoking_status = factor(smoking_status),
+           stroke = factor(ifelse(stroke == 1, "yes", "no"), 
+                           levels = c("yes", "no"))) %>% 
+    select(-id)
+  return(df)
+}
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+# Mirror URL
+dataset_url <- 'https://raw.githubusercontent.com/KOcasey/Stroke-Diagnosis-Analysis/main/Data/StrokeDiagnosis.csv'
+
+# download path and name
+download_filename <- "healthcare-dataset-stroke-data.csv"
+download_path <- paste0(dir_data, "/", download_filename)
+
+df <- download_from_git(dataset_url, download_path)
+head(df)
+```
+
+# ------------------------------------------------------------------------
+
+## Data Cleaning
+
+In `smoking_status` 'Unknown' should be changed to NA.
+
+Also, it can be ordered: never \< formerly \< smokes
+
+`ever_married` can be re-coded as 0/1 in accordance with `heart_disease` and `hypertension`
+
+`id` can be removed
+
+Other columns seem to be OK
+
+## Descriptive statistics
+
+```{r, message=FALSE, warning=FALSE}
+skim(df) %>%
+  yank("factor")
+```
+
+-   Target 'stroke' is hugely imbalanced!
+
+-   'smoking_status' completeness rate is low
+
+-   One 'Other' gender can be removed
+
+```{r, message=FALSE, warning=FALSE}
+df <- df %>% 
+  filter(gender != "Other")
+
+skim(df) %>%
+  yank("numeric")
+```
+
+-   BMI completeness rate 0.96
+
+### How many `smoking_status` in each target class?
+
+Keep in mind that if smoking NAs are mainly in "healthy" class, we can simply remove them
+
+```{r, message=FALSE, warning=FALSE}
+df %>% 
+  group_by(stroke, smoking_status) %>% 
+  count()
+```
+
+A lot of them are in "stroke" group, some imputation will be needed.
+
+### How many skipped BMI values in each target class?
+
+```{r, message=FALSE, warning=FALSE}
+df %>% 
+  filter(is.na(bmi)) %>% 
+  group_by(stroke) %>% 
+  count()
+```
+
+-   We have too many NAs in BMI among 'stroke-yes' cases to simply remove them. Some imputation is needed.
+
+# ------------------------------------------------------------------------
+
+# Exploratory Data Analysis(EDA)
+
+## In details
+
+### Stroke vs Age
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(df, aes(stroke, age)) +
+  geom_boxplot(aes(fill = stroke), alpha = 0.5, varwidth = T, notch = T) +
+  geom_violin(aes(fill = stroke), alpha = 0.5) +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  xlab("")
+```
+
+-   No surprises here: the older you get the higher the chance of getting stroke.
+
+-   There are observation with age much below 20 y.o., even close to 0! These are very young kids or babies - should we even include them in the analysis? If yes, the rest will be prediction only for adults.
+
+-   Stroke in kids probably has very different causes compared to stroke in adults/older folk.
+
+### Stroke vs Age + Gender
+
+```{r box1, message=FALSE, warning=FALSE}
+ggplot(df, aes(stroke, age)) + 
+  geom_violin(alpha=0.3) +
+  geom_jitter(alpha=0.2, size=0.8, width = 0.15, height = 0.1, aes(color = gender)) + 
+  geom_boxplot(alpha = 0.2) +
+  scale_color_brewer(palette = "Set2", direction = -1)
+```
+
+-   No gender imbalance with respect to `age` and `stroke`
+
+### Stroke vs Glucose
+
+-   Observations with stroke tend to have higher glucose level
+
+This average glucose level is probably the results of fasting blood sugar test
+
+If I correctly understand this [CDC information](https://www.cdc.gov/diabetes/basics/getting-tested.html#:~:text=Fasting%20Blood%20Sugar%20Test&text=A%20fasting%20blood%20sugar%20level,higher%20indicates%20you%20have%20diabetes.) on diabetes, values greater than 126 is evidence of diabetes. But \>250? Is it realistic?
+
+### Stroke vs BMI
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(df, aes(stroke, bmi)) +
+  geom_boxplot(aes(fill = stroke), alpha = 0.5, varwidth = T, notch = T) +
+  geom_violin(aes(fill = stroke), alpha = 0.5) +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  xlab("")
+```
+
+-   BMI over 40 is the 3rd class of obesity - BMI over 75 should not exist at all, I think.
+
+Let's look' at this weird points
+
+### Age vs BMI
+
+```{r, message=FALSE, warning=FALSE}
+facet_names <- c("no" = "no stroke", "yes" = "stroke")
+
+ggplot(df, aes(age, bmi)) +
+  geom_point(color = "steelblue", alpha = 0.8, size = 0.5) +
+  facet_grid(rows = vars(stroke), labeller = as_labeller(facet_names)) +
+  guides()
+```
+
+Patients with BMI over 75 are also very young. Suspicious.
+
+### Glucose vs Age + smoking
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(df, aes(age, avg_glucose_level)) +
+  geom_point(aes(color = smoking_status), alpha = 0.6, size = 1) +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  facet_grid(rows = vars(stroke), labeller = as_labeller(facet_names)) +
+  guides()
+```
+
+-   Children are mainly of 'Unknown' smoking status; both target groups are divided into two clusters -- I am curious why. It is not gender, nor heart disease or any other factor we have in the data set.
+
+### Age vs Smoking
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(df, aes(smoking_status, age)) +
+  geom_boxplot(aes(fill = stroke), alpha = 0.5, varwidth = T, notch = T) +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  xlab("")
+```
+
+-   Kids are main non-smokers of course. Note the same two outliers of age below 20 in 'stroke-yes'
+
+### Glucose vs BMI
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(df, aes(avg_glucose_level, bmi)) +
+  geom_point(aes(color = age), alpha = 0.6, size = 1) +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  facet_grid(rows = vars(stroke), labeller = as_labeller(facet_names)) +
+  guides() +
+  xlab("avg glucose level")
+```
+
+-   BMI outliers: super high BMI but super low glucose levels? How is that possible?
+
+-   Can it be a bias introduced by testing protocol misuse? Like instead of measuring glucose *before* eating, in some samples it was done *after* eating?
+
+-   Again, all the observations in both target classes form two distinct clusters.
+
+### Stroke vs Gender
+
+```{r bar1, message=FALSE, warning=FALSE}
+gender <- df %>% 
+  group_by(stroke, gender) %>% 
+  summarize(N=n())
+
+ggplot(gender, aes(stroke, N)) +
+  geom_bar(aes(fill=gender), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = -1) +
+  ylab("proportion")
+```
+
+-   No disproportions here
+
+### Stroke vs Hypertension
+
+```{r bar2, message=FALSE, warning=FALSE}
+hyptens <- df %>% 
+  group_by(stroke, hypertension) %>% 
+  summarize(N = n())
+
+ggplot(hyptens, aes(stroke, N)) +
+  geom_bar(aes(fill = hypertension), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = -1) +
+  ylab("proportion")
+```
+
+-   Hypertension occurred more often in `stroke-yes`
+
+### Stroke vs Heart Disease
+
+```{r, message=FALSE, warning=FALSE}
+heart <- df %>% 
+  group_by(stroke, heart_disease) %>% 
+  summarize(N=n())
+
+ggplot(heart, aes(stroke, N)) +
+  geom_bar(aes(fill = heart_disease), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = 1) +
+  ylab("proportion")
+```
+
+-   Heart disease occurred more often in `stroke-yes`
+
+### Stroke vs Ever Married
+
+```{r, message=FALSE, warning=FALSE}
+married <- df %>% 
+  group_by(stroke, ever_married) %>% 
+  summarize(N=n())
+
+ggplot(married, aes(stroke, N)) +
+  geom_bar(aes(fill = ever_married), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = -1) +
+  ylab("proportion")
+```
+
+-   Marriage is bad :)
+
+### Stroke vs Work Type
+
+```{r, message=FALSE, warning=FALSE}
+work <- df %>% 
+  group_by(stroke, work_type) %>% 
+  summarize(N=n())
+
+ggplot(work, aes(stroke, N)) +
+  geom_bar(aes(fill = work_type), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = 1) +
+  ylab("proportion")
+```
+
+-   It is good to be a kid :)
+
+-   It is bad to be self-employed :)
+
+### Stroke vs Residence Type
+
+```{r, message=FALSE, warning=FALSE}
+residence <- df %>% 
+  group_by(stroke, Residence_type) %>% 
+  summarize(N=n())
+
+ggplot(residence, aes(stroke, N)) +
+  geom_bar(aes(fill = Residence_type), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = 1) +
+  ylab("proportion")
+```
+
+-   No disproportions here
+
+### Stroke vs Smoking
+
+```{r, message=FALSE, warning=FALSE}
+smoking <- df %>% 
+  group_by(stroke, smoking_status) %>% 
+  summarize(N=n())
+
+ggplot(smoking, aes(stroke, N)) +
+  geom_bar(aes(fill = smoking_status), alpha = 0.8, stat = "identity", position = "fill") +
+  scale_fill_brewer(palette = "Set2", direction = 1) +
+  ylab("proportion")
+```
+
+-   There are more smokers of all types in `stroke-yes`
+
+### Kids and Smoking
+
+```{r, message=FALSE, warning=FALSE}
+df %>% 
+  filter(work_type == "children") %>% 
+  group_by(smoking_status) %>% 
+  summarise(N = n(), 
+            avg.age = mean(age), 
+            max.age = max(age), 
+            min.age = min(age))
+```
+
+A lot of NAs in `smoking_status` comes from group 'Children' (see `work_type`). I can replace them with 'never smoked' during imputation stage of the analysis.
+
+### EDA Summary
+
+-   There are several suspicious outliers (like in BMI and glucose). So we can safely remove BMI \> 75, maybe even BMI \> 60 (Remember that BMI \> 40 is the highest class of obesity).
+
+-   What is less safe - it is removing non-adults (younger than 20 y.o.). On one hand they provide valid information (age is very important predictor), on the other hand their stroke cases where a lot of predictors do not have sense (or are obvious NAs) for non-adults (like smoking, marriage status, employment type, residence type etc.); model-based imputation of `smoking_status` in children does not have sense as well, I should rather replace with "never smoked".
+
+-   Since, modelling using all predictors and observations has given me very moderate results (TPR = 1 comes with very high FPR and very low probability cutoff close to 0), I will try various trimming of the data.
+
+# ------------------------------------------------------------------------
+
+# Data preprocessing
+
+## Stratified split
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(124)
+
+data_split <- initial_split(df, prop = 3/4, strata = stroke)
+
+df_train <- training(data_split)
+df_test <- testing(data_split)
+```
+
+## 10-fold CV repeated 10 times
+
+```{r, message=FALSE, warning=FALSE}
+set.seed(345)
+
+# Stratified, repeated 10-fold cross-validation
+cv_folds <- vfold_cv(df_train, strata = "stroke", v = 10, repeats = 1)
+
+# metrics
+cls_metrics <- metric_set(roc_auc, j_index)
+```
+
+## Recipe
+
+```{r, message=FALSE, warning=FALSE}
+
+prep_recipe <- recipe(stroke ~ ., data = df_train) %>%
+  
+  step_impute_bag(bmi, smoking_status) %>%
+  step_dummy(all_nominal_predictors()) %>% 
+  step_zv(all_predictors()) %>% 
+  #step_impute_bag(all_predictors()) %>% 
+  step_normalize(age, avg_glucose_level, bmi) %>% 
+  step_smote(stroke, over_ratio = 1, seed = 100) %>%
+  check_missing(all_predictors()) %>% 
+  step_zv(all_predictors())
+
+prep_recipe
+```
+
+```{r, message=FALSE, warning=FALSE, include=FALSE, eval=FALSE}
+
+# the other way is to apply the recipe to your data immediately
+# prep & bake
+train_data <- prep_recipe %>% 
+  prep(training = df_train) %>% 
+  bake(new_data = NULL) # df_train will be processed
+
+# bake test. what about SMOTE?
+test_data <- prep_recipe %>% 
+  prep(training = df_test) %>% 
+  bake(new_data = df_test)
+
+# check oversampling results
+train_data %>% count(stroke) # SMOTE was applied
+test_data %>% count(stroke) # not applied
+```
+
+# ------------------------------------------------------------------------
+
+# Logistic Regression
+
+I add one more step to the recipe - remove correlated predictors (threshold = 0.75)
+
+**\*\* NOTE: The following module uses GridTuning for performing Cross Validation using a set of penalty terms iteratively, and is estimated to take approx. [15 mins]{.underline} of execution run-time on a decent system configuration.\*\***
+
+```{r, message=FALSE, warning=FALSE}
+
+# recipe for LR
+lr_recipe <- prep_recipe %>% 
+  step_corr(all_predictors(), threshold = 0.75)
+
+# set model type/engine
+lr_mod <- logistic_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+
+# define the workflow
+lr_workflow <- 
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(lr_recipe)
+
+# create a tune grid
+lr_reg_grid <- tibble(penalty = 10**seq(-4, 0, length.out = 30))
+
+# train and tune the model
+# Approx. 15 mins on run-time
+lr_res <- tune_grid(lr_workflow,
+              grid = lr_reg_grid,
+              resamples = cv_folds,
+              control = control_grid(save_pred = TRUE),
+              metrics = cls_metrics)
+
+# autoplot(lr_res)
+```
+
+```{r}
+autoplot(lr_res)
+```
+
+```{r}
+top_models <-
+  lr_res %>% 
+  show_best("roc_auc", n = 5) %>% 
+  arrange(penalty) 
+
+top_models %>% arrange(penalty)
+```
+
+```{r}
+lr_best <- lr_res %>% 
+  select_best(metric = "roc_auc")
+
+lr_best
+```
+
+# ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+
+# Results
+
+# ------------------------------------------------------------------------
+
+# Final Fit
+
+Fit the penalized Logistic Regression model with chosen hyper-parameters to the entire training data set and test it on the test data set.
+
+```{r, message=FALSE, warning=FALSE, include=FALSE, eval=FALSE}
+
+# Final model 
+# - with tuned hyper-params retireved from GridTuning on penalty terms:
+last_mod <- logistic_reg(penalty = k, mixture = 1) %>% 
+  set_engine("glmnet")  %>% 
+  set_mode("classification")
+
+# the last workflow: based on LR
+last_wf <- 
+  lr_workflow %>% 
+  update_model(last_mod)
+
+# Final fitting:
+set.seed(345)
+last_fit <- 
+  last_wf %>% 
+  last_fit(data_split)
+```
+
+```{r}
+lr_auc <- 
+  lr_res %>% 
+  collect_predictions(parameters = lr_best) %>% 
+  roc_curve(stroke, .pred_yes) %>% 
+  mutate(model = "Logistic Regression")
+
+autoplot(lr_auc)
+```
+
+# ------------------------------------------------------------------------
+
+### 4. Conclusion
+
+Predictors: age, avg glucose level, hypertension, marriage, self-employed
+
+Non-predictors: gender, bmi, smoking status
+
+Based on our exploratory data analysis The variables that seem like they could be good stroke predictors are age, average glucose level, hypertension, marriage status, and employment status. There are variables you would expect such as, age, average glucose level, and hypertension. Older age, high glucose levels, and hypertension often lead to negative health effects. However, the fact that marriage status and employment status also up is somewhat surprising and definitely requires a more in depth analysis of why they showed up as possible stroke predictors. The variables that were non-predictors after our exploratory analysis were gender, bmi, and smoking status. It is somewhat surprising that bmi and smoking status appeared as non-predictors. Smoking and high bmi are often associated with negative health effects. It is possible these just don't contribute to causing a stroke, so it is also worth looking at them more in depth to find out why this might be the case. This exploratory data analysis was informative, however we cannot make any definitive conclusions on good stroke predictors on that alone. To make a definitive conclusion modeling is required.
+
+# ------------------------------------------------------------------------
+
+### 5. Personal Biases
+
+*Casey* Coming into this I already knew that age is one of the biggest factors contributing to a stroke. So, I had a pre-made assumption that when we looked at the data, age should be one of the best predictors of having a stroke or not. Will add more....
+
+*Filip* Surprisingly, smoking status does not seem like a good predictor. However, I think it would be biased to say that smoking does not significantly contribute to stroke based on just this analysis. There are researches available which suggest the opposite. In our data, smoking is divided into three categories. The reason for smoking not being a good predictor might be the lack of information. If we knew more accurate amounts (\# of cigarettes people smoke/day, etc.), the result might be different.
+
+*Pranjal* I had a personal bias towards the societal factors such as employment and marriage status. I had an intuition that these would turn out to be the major factors primary because coming from India these societal factors play a significant role in individuals' personal and mental life. Though we didn't consider mental health factors but those could be important next steps. As for the scope of this project, I feel my consensus pushed me towards examining these factors in a much greater detail as compared to other relevant ones like smoking, etc.
+
+X - X
