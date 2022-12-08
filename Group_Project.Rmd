@@ -1,6 +1,12 @@
 ---
 title: "Stroke Prediction in R"
-authors: "Sreevani Basvaraj Patil"
+authors: 
+  1: "Sreevani Basvaraj Patil"
+  2: "Pranjal Pathak"
+  3: "Filip Forejtek"
+  4: "Casey Cooper"
+  5: "Sanchana Sundarraj"
+  6: "Akhilesh P patil"
 date: '2022-12-03'
 output:
   word_document: default
@@ -15,6 +21,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # ------------------------------------------------------------------------
+
+# Team - 
+
+Sreevani Basvaraj Patil; Pranjal Pathak; Filip Forejtek; Casey Cooper; Sanchana Sundarraj; Akhilesh P Patil
 
 ## CONTENTS
 
@@ -676,5 +686,7 @@ Based on our exploratory data analysis The variables that seem like they could b
 *Filip* Surprisingly, smoking status does not seem like a good predictor. However, I think it would be biased to say that smoking does not significantly contribute to stroke based on just this analysis. There are researches available which suggest the opposite. In our data, smoking is divided into three categories. The reason for smoking not being a good predictor might be the lack of information. If we knew more accurate amounts (\# of cigarettes people smoke/day, etc.), the result might be different.
 
 *Pranjal* I had a personal bias towards the societal factors such as employment and marriage status. I had an intuition that these would turn out to be the major factors primary because coming from India these societal factors play a significant role in individuals' personal and mental life. Though we didn't consider mental health factors but those could be important next steps. As for the scope of this project, I feel my consensus pushed me towards examining these factors in a much greater detail as compared to other relevant ones like smoking, etc.
+
+*Sanchana* I had a leaning towards lifestyle being one of the major reasons for stroke Things such as smoking, drinking too much alcohol, being overweight and eating unhealthy foods can damage your blood vessels, increase your blood pressure and make your blood more likely to stroke. So during the analysis, I focused on the factors like BMI, and smoking to check if my hypothesis turns out to be true.
 
 X - X
